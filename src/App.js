@@ -504,7 +504,7 @@ const App = () => {
           <Link to="/">Home</Link>
           <Link to="/">Cataloge</Link>
           <Link to="/">Events</Link>
-          <Link to="/">About Us</Link>
+          <Link to="/aboutUs">About Us</Link>
         </nav>
         <Link className="cart-btn" to="/login" aria-label="Log in">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
