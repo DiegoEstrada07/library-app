@@ -1,0 +1,367 @@
+openapi: 3.0.3
+info:
+  title: Library App API
+  version: 1.0.0
+  description: API contract for the future PHP + MySQL backend.
+servers:
+  - url: https://api.library-app.local/v1
+tags:
+  - name: Auth
+  - name: Books
+  - name: Loans
+  - name: Purchases
+
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in with email and password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Invalidate current session.
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Logout successful.
+
+  /books:
+    get:
+      tags: [Books]
+      summary: List books.
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+          description: Search by title or author.
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [relevant, popular, title, year]
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 40
+      responses:
+        '200':
+          description: Books list.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Book'
+
+  /books/{bookId}:
+    get:
+      tags: [Books]
+      summary: Get a book by id.
+      parameters:
+        - in: path
+          name: bookId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Book detail.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Book'
+        '404':
+          description: Book not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /loans:
+    get:
+      tags: [Loans]
+      summary: Get current user's borrowed books.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Loan list.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Loan'
+    post:
+      tags: [Loans]
+      summary: Borrow a book.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bookId]
+              properties:
+                bookId:
+                  type: string
+      responses:
+        '201':
+          description: Loan created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Loan'
+        '409':
+          description: Already borrowed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /loans/{loanId}:
+    patch:
+      tags: [Loans]
+      summary: Renew a borrowed book (update due date).
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: loanId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                renewDays:
+                  type: integer
+                  default: 7
+      responses:
+        '200':
+          description: Loan updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Loan'
+    delete:
+      tags: [Loans]
+      summary: Return borrowed book.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: loanId
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Loan removed.
+
+  /purchases:
+    get:
+      tags: [Purchases]
+      summary: Get purchased ebooks.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Purchase list.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Purchase'
+    post:
+      tags: [Purchases]
+      summary: Purchase an ebook.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bookId]
+              properties:
+                bookId:
+                  type: string
+      responses:
+        '201':
+          description: Purchase created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Purchase'
+        '409':
+          description: Already purchased.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /purchases/{purchaseId}:
+    delete:
+      tags: [Purchases]
+      summary: Remove ebook from purchased list.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: purchaseId
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Purchase removed.
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+
+    Book:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        author:
+          type: string
+        coverUrl:
+          type: string
+          nullable: true
+        firstPublishYear:
+          type: integer
+          nullable: true
+        editionCount:
+          type: integer
+        format:
+          type: string
+          enum: [EPUB, PDF]
+
+    Loan:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        bookId:
+          type: string
+        dueDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [active, returned]
+        book:
+          $ref: '#/components/schemas/Book'
+
+    Purchase:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        bookId:
+          type: string
+        purchasedAt:
+          type: string
+          format: date-time
+        book:
+          $ref: '#/components/schemas/Book'
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
