@@ -239,10 +239,54 @@ const Usser = () => {
           text-decoration: none;
         }
 
+        .cart-wrap {
+          position: relative;
+          display: inline-grid;
+        }
+
+        .nav-actions {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .account-link {
+          text-decoration: none;
+          color: #12110e;
+          font-size: 14px;
+          font-weight: 700;
+        }
+
         .cart-btn svg {
           width: 20px;
           height: 20px;
           stroke: #fff;
+        }
+
+        .cart-badge {
+          position: absolute;
+          width: 20px;
+          height: 20px;
+          border-radius: 999px;
+          font-size: 10px;
+          font-weight: 700;
+          display: grid;
+          place-items: center;
+          border: 2px solid #fff;
+          color: #fff;
+          pointer-events: none;
+        }
+
+        .cart-badge.borrowed {
+          top: -6px;
+          right: -8px;
+          background: #b12e45;
+        }
+
+        .cart-badge.purchased {
+          bottom: -6px;
+          right: -8px;
+          background: #2f6cb4;
         }
 
         .account-main {
@@ -416,16 +460,36 @@ const Usser = () => {
           <Link to="/catalog">Catalog</Link>
           <Link to="/aboutUs">About Us</Link>
         </nav>
-        <Link className="cart-btn" to="/login" aria-label="Log in">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path
-              d="M20 21a8 8 0 0 0-16 0"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
-            <circle cx="12" cy="8" r="4" strokeWidth="1.8" />
-          </svg>
-        </Link>
+        <div className="nav-actions">
+          <Link className="account-link" to="/login">
+            {isLoggedIn ? 'My Account' : 'Log in'}
+          </Link>
+          <div className="cart-wrap">
+          <Link
+            className="cart-btn"
+            to="/login"
+            aria-label={`Carrito: ${borrowedBooks.length} prestados y ${ownedEbooks.length} comprados`}
+            title={`Prestados: ${borrowedBooks.length} | Comprados: ${ownedEbooks.length}`}
+          >
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M3 4h2l1.7 9.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 1.9-1.4l1.6-5.1H7.1"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <circle cx="10" cy="19" r="1.4" fill="#fff" stroke="none" />
+              <circle cx="17" cy="19" r="1.4" fill="#fff" stroke="none" />
+            </svg>
+          </Link>
+          <span className="cart-badge borrowed" aria-hidden="true">
+            {borrowedBooks.length}
+          </span>
+          <span className="cart-badge purchased" aria-hidden="true">
+            {ownedEbooks.length}
+          </span>
+          </div>
+        </div>
       </header>
 
       <main className="account-main">

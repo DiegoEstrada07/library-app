@@ -1,8 +1,50 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Footer from './Footer';
 
+const BORROWED_STORAGE_KEY = 'libraryBorrowedBooks';
+const PURCHASED_STORAGE_KEY = 'libraryPurchasedBooks';
+const AUTH_STORAGE_KEY = 'libraryIsLoggedIn';
+
+const readStoredList = (key) => {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
 const AboutUs = () => {
+  const [borrowedCount, setBorrowedCount] = useState(
+    () => readStoredList(BORROWED_STORAGE_KEY).length
+  );
+  const [purchasedCount, setPurchasedCount] = useState(
+    () => readStoredList(PURCHASED_STORAGE_KEY).length
+  );
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    () => localStorage.getItem(AUTH_STORAGE_KEY) === 'true'
+  );
+
+  useEffect(() => {
+    const syncCartCounts = () => {
+      setBorrowedCount(readStoredList(BORROWED_STORAGE_KEY).length);
+      setPurchasedCount(readStoredList(PURCHASED_STORAGE_KEY).length);
+      setIsLoggedIn(localStorage.getItem(AUTH_STORAGE_KEY) === 'true');
+    };
+
+    syncCartCounts();
+    window.addEventListener('storage', syncCartCounts);
+    window.addEventListener('focus', syncCartCounts);
+
+    return () => {
+      window.removeEventListener('storage', syncCartCounts);
+      window.removeEventListener('focus', syncCartCounts);
+    };
+  }, []);
+
   return (
     <div className="aboutus-page">
       <style>{`
@@ -82,10 +124,54 @@ const AboutUs = () => {
           text-decoration: none;
         }
 
+        .cart-wrap {
+          position: relative;
+          display: inline-grid;
+        }
+
+        .nav-actions {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .account-link {
+          text-decoration: none;
+          color: var(--ink);
+          font-size: 14px;
+          font-weight: 700;
+        }
+
         .cart-btn svg {
           width: 20px;
           height: 20px;
           stroke: #fff;
+        }
+
+        .cart-badge {
+          position: absolute;
+          width: 20px;
+          height: 20px;
+          border-radius: 999px;
+          font-size: 10px;
+          font-weight: 700;
+          display: grid;
+          place-items: center;
+          border: 2px solid #fff;
+          color: #fff;
+          pointer-events: none;
+        }
+
+        .cart-badge.borrowed {
+          top: -6px;
+          right: -8px;
+          background: #b12e45;
+        }
+
+        .cart-badge.purchased {
+          bottom: -6px;
+          right: -8px;
+          background: #2f6cb4;
         }
 
         .about {
@@ -201,16 +287,36 @@ const AboutUs = () => {
           <Link to="/catalog">Catalog</Link>
           <Link to="/aboutUs">About Us</Link>
         </nav>
-        <Link className="cart-btn" to="/login" aria-label="Log in">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path
-              d="M20 21a8 8 0 0 0-16 0"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
-            <circle cx="12" cy="8" r="4" strokeWidth="1.8" />
-          </svg>
-        </Link>
+        <div className="nav-actions">
+          <Link className="account-link" to="/login">
+            {isLoggedIn ? 'My Account' : 'Log in'}
+          </Link>
+          <div className="cart-wrap">
+          <Link
+            className="cart-btn"
+            to="/login"
+            aria-label={`Carrito: ${borrowedCount} prestados y ${purchasedCount} comprados`}
+            title={`Prestados: ${borrowedCount} | Comprados: ${purchasedCount}`}
+          >
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M3 4h2l1.7 9.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 1.9-1.4l1.6-5.1H7.1"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <circle cx="10" cy="19" r="1.4" fill="#fff" stroke="none" />
+              <circle cx="17" cy="19" r="1.4" fill="#fff" stroke="none" />
+            </svg>
+          </Link>
+          <span className="cart-badge borrowed" aria-hidden="true">
+            {borrowedCount}
+          </span>
+          <span className="cart-badge purchased" aria-hidden="true">
+            {purchasedCount}
+          </span>
+          </div>
+        </div>
       </header>
 
       <section className="about">
@@ -265,7 +371,5 @@ const AboutUs = () => {
 };
 
 export default AboutUs;
-
-
 
 
