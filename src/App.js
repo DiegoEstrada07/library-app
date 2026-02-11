@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import Footer from './Footer';
 
 const SUBJECT_URL =
   'https://openlibrary.org/subjects/public_domain.json?limit=8';
@@ -62,13 +63,15 @@ const App = () => {
 
         .page {
           min-height: 100vh;
+          display: flex;
+          flex-direction: column;
           color: var(--ink);
           font-family: 'Nunito Sans', 'Segoe UI', sans-serif;
           background:
             radial-gradient(circle at 10% 10%, rgba(217, 75, 96, 0.08), transparent 45%),
             radial-gradient(circle at 85% 20%, rgba(122, 144, 126, 0.1), transparent 50%),
             linear-gradient(180deg, #faf8f5 0%, #f7f4ef 50%, #ffffff 100%);
-          padding: 28px 60px 80px;
+          padding: 28px 60px 0;
         }
 
         .nav {
@@ -455,7 +458,7 @@ const App = () => {
 
         @media (max-width: 980px) {
           .page {
-            padding: 24px 28px 60px;
+            padding: 24px 28px 0;
           }
 
           .hero {
@@ -502,8 +505,7 @@ const App = () => {
         </div>
         <nav className="nav-links">
           <Link to="/">Home</Link>
-          <Link to="/">Cataloge</Link>
-          <Link to="/">Events</Link>
+          <Link to="/catalog">Catalog</Link>
           <Link to="/aboutUs">About Us</Link>
         </nav>
         <Link className="cart-btn" to="/login" aria-label="Log in">
@@ -607,41 +609,13 @@ const App = () => {
             →
           </button>
         </div>
-      </section>
+      </section>
 
-      <footer className="footer">
-        <div>
-          <div className="logo">
-            BOOKCLUB<span>.</span>
-          </div>
-          <p>
-            Discover public domain classics, curated collections, and upcoming
-            events from our community of readers.
-          </p>
-        </div>
-        <div>
-          <h4>Company</h4>
-          <a href="/">About</a>
-        </div>
-        <div>
-          <h4>Explore</h4>
-          <a href="/">Catalog</a>
-        </div>
-        <div>
-          <h4>Support</h4>
-          <Link to="/login">Log in</Link>
-        </div>
-        <div className="footer-bottom">
-          <div>© 2026 Bookclub. All rights reserved.</div>
-          <div className="socials" aria-label="Social links">
-            <span>◎</span>
-            <span>◆</span>
-            <span>✦</span>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };
 
 export default App;
+
+

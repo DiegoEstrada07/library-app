@@ -1,4 +1,13 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import Footer from './Footer';
+
+const AUTH_STORAGE_KEY = 'libraryIsLoggedIn';
+const USER_STORAGE_KEY = 'libraryCurrentUser';
+const BORROWED_STORAGE_KEY = 'libraryBorrowedBooks';
+const PURCHASED_STORAGE_KEY = 'libraryPurchasedBooks';
+const CATALOG_STORAGE_KEY = 'libraryEbookCatalog';
+const EMPTY_LIST_MESSAGE = 'No books in this list.';
 
 const borrowedSeed = [
   {
@@ -21,17 +30,77 @@ const borrowedSeed = [
   },
 ];
 
+const ebookCatalog = [
+  {
+    id: 'eb-1',
+    title: 'Pride and Prejudice',
+    author: 'Jane Austen',
+    format: 'EPUB',
+  },
+  {
+    id: 'eb-2',
+    title: 'Moby-Dick',
+    author: 'Herman Melville',
+    format: 'PDF',
+  },
+  {
+    id: 'eb-3',
+    title: 'Dracula',
+    author: 'Bram Stoker',
+    format: 'EPUB',
+  },
+];
+
 const demoUsers = [
   { name: 'Emma Parker', email: 'emma@demo.com', password: 'Emma123!' },
   { name: 'James Carter', email: 'james@demo.com', password: 'Carter#45' },
 ];
 
+const readStoredList = (key, fallback = []) => {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const readStoredBoolean = (key, fallback = false) => {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null) return fallback;
+    return raw === 'true';
+  } catch {
+    return fallback;
+  }
+};
+
+const readStoredString = (key, fallback = '') => {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw || fallback;
+  } catch {
+    return fallback;
+  }
+};
+
 const Usser = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(() => readStoredBoolean(AUTH_STORAGE_KEY, false));
+  const [currentUser, setCurrentUser] = useState(() => readStoredString(USER_STORAGE_KEY, ''));
+  const [borrowedBooks, setBorrowedBooks] = useState(() =>
+    readStoredList(BORROWED_STORAGE_KEY, borrowedSeed)
+  );
+  const [catalogEbooks, setCatalogEbooks] = useState(() =>
+    readStoredList(CATALOG_STORAGE_KEY, ebookCatalog)
+  );
+  const [ownedEbooks, setOwnedEbooks] = useState(() =>
+    readStoredList(PURCHASED_STORAGE_KEY, [])
+  );
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -53,6 +122,8 @@ const Usser = () => {
 
     setCurrentUser(match.name);
     setIsLoggedIn(true);
+    localStorage.setItem(AUTH_STORAGE_KEY, 'true');
+    localStorage.setItem(USER_STORAGE_KEY, match.name);
   };
 
   const handleLogout = () => {
@@ -60,6 +131,44 @@ const Usser = () => {
     setEmail('');
     setPassword('');
     setCurrentUser('');
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+    localStorage.removeItem(USER_STORAGE_KEY);
+  };
+
+  const handleReturnBorrowed = (bookId) => {
+    setBorrowedBooks((previous) => {
+      const next = previous.filter((book) => book.id !== bookId);
+      localStorage.setItem(BORROWED_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const handleBuyEbook = (ebook) => {
+    setOwnedEbooks((previous) => {
+      if (previous.some((item) => item.id === ebook.id)) return previous;
+      const next = [...previous, ebook];
+      localStorage.setItem(PURCHASED_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const handleRemoveCatalogEbook = (ebookId) => {
+    setCatalogEbooks((previous) => {
+      const next = previous.filter((ebook) => ebook.id !== ebookId);
+      localStorage.setItem(CATALOG_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const visibleCatalogEbooks = catalogEbooks.filter(
+    (ebook) => !ownedEbooks.some((item) => item.id === ebook.id)
+  );
+  const handleRemoveEbook = (ebookId) => {
+    setOwnedEbooks((previous) => {
+      const next = previous.filter((ebook) => ebook.id !== ebookId);
+      localStorage.setItem(PURCHASED_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
   };
 
   return (
@@ -67,12 +176,81 @@ const Usser = () => {
       <style>{`
         .account-page {
           min-height: 100vh;
-          display: grid;
-          place-items: center;
-          padding: 40px 24px;
-          background: linear-gradient(120deg, #f7f4ef 0%, #ffffff 100%);
+          display: flex;
+          flex-direction: column;
+          padding: 0;
+          background:
+            radial-gradient(circle at 10% 10%, rgba(217, 75, 96, 0.08), transparent 45%),
+            radial-gradient(circle at 85% 20%, rgba(122, 144, 126, 0.1), transparent 50%),
+            linear-gradient(180deg, #faf8f5 0%, #f7f4ef 50%, #ffffff 100%);
           font-family: 'Nunito Sans', 'Segoe UI', sans-serif;
           color: #12110e;
+        }
+
+        .nav {
+          position: sticky;
+          top: 0;
+          z-index: 20;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 20px;
+          padding: 20px 24px;
+          border-bottom: 1px solid rgba(18, 17, 14, 0.08);
+          background: rgba(250, 248, 245, 0.94);
+          backdrop-filter: blur(8px);
+        }
+
+        .logo {
+          font-family: 'Cormorant Garamond', serif;
+          font-weight: 700;
+          letter-spacing: 1.5px;
+          font-size: 20px;
+        }
+
+        .logo span {
+          color: #c2562d;
+        }
+
+        .nav-links {
+          display: flex;
+          gap: 26px;
+          font-size: 15px;
+          color: #4e4a45;
+        }
+
+        .nav-links a {
+          text-decoration: none;
+          color: inherit;
+          font-weight: 600;
+        }
+
+        .cart-btn {
+          width: 42px;
+          height: 42px;
+          border-radius: 50%;
+          border: none;
+          background: #12110e;
+          color: #fff;
+          display: grid;
+          place-items: center;
+          font-size: 18px;
+          cursor: pointer;
+          text-decoration: none;
+        }
+
+        .cart-btn svg {
+          width: 20px;
+          height: 20px;
+          stroke: #fff;
+        }
+
+        .account-main {
+          flex: 1;
+          width: 100%;
+          display: grid;
+          place-items: center;
+          padding: 24px 24px 40px;
         }
 
         .account-page * {
@@ -160,6 +338,12 @@ const Usser = () => {
           font-size: 22px;
         }
 
+        .borrowed-section h4 {
+          margin: 18px 0 10px;
+          font-size: 16px;
+          color: #4e4a45;
+        }
+
         .borrowed-grid {
           display: grid;
           gap: 14px;
@@ -183,6 +367,28 @@ const Usser = () => {
           font-size: 13px;
         }
 
+        .borrowed-actions {
+          display: flex;
+          gap: 8px;
+          margin-top: 4px;
+        }
+
+        .small-btn {
+          border: 1px solid #ded7cd;
+          border-radius: 10px;
+          background: #ffffff;
+          color: #12110e;
+          font-size: 12px;
+          padding: 6px 10px;
+          cursor: pointer;
+        }
+
+        .small-btn.primary {
+          background: #12110e;
+          color: #ffffff;
+          border-color: #12110e;
+        }
+
         .logout {
           margin-top: 16px;
           border: 1px solid #ded7cd;
@@ -194,73 +400,178 @@ const Usser = () => {
           .account-card {
             grid-template-columns: 1fr;
           }
+
+          .nav-links {
+            display: none;
+          }
         }
       `}</style>
 
-      <div className="account-card">
-        <div className="account-panel">
-          <h2>Welcome back</h2>
-          <p>
-            Access your library account to view your borrowed books and due
-            dates.
-          </p>
-          {!isLoggedIn && (
-            <form className="account-form" onSubmit={handleSubmit}>
-              <div>
-                <label htmlFor="email">Email</label>
-                <input
-                  id="email"
-                  type="email"
-                  placeholder="you@email.com"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                />
-              </div>
-              <div>
-                <label htmlFor="password">Password</label>
-                <input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                />
-              </div>
-              {error && <div className="error">{error}</div>}
-              <button type="submit">Log in</button>
-            </form>
-          )}
+      <header className="nav">
+        <div className="logo">
+          BOOKCLUB<span>.</span>
         </div>
+        <nav className="nav-links">
+          <Link to="/">Home</Link>
+          <Link to="/catalog">Catalog</Link>
+          <Link to="/aboutUs">About Us</Link>
+        </nav>
+        <Link className="cart-btn" to="/login" aria-label="Log in">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M20 21a8 8 0 0 0-16 0"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
+            <circle cx="12" cy="8" r="4" strokeWidth="1.8" />
+          </svg>
+        </Link>
+      </header>
 
-        <div className="borrowed-section">
-          {isLoggedIn ? (
-            <>
-              <h3>{currentUser ? `${currentUser}'s borrowed books` : 'Your borrowed books'}</h3>
-              <div className="borrowed-grid">
-                {borrowedSeed.map((book) => (
-                  <article className="borrowed-card" key={book.id}>
-                    <div className="borrowed-title">{book.title}</div>
-                    <div className="borrowed-meta">{book.author}</div>
-                    <div className="borrowed-meta">Due: {book.due}</div>
-                  </article>
-                ))}
-              </div>
-              <button type="button" className="account-form button logout" onClick={handleLogout}>
-                Log out
-              </button>
-            </>
-          ) : (
-            <>
-              <h3>Your borrowed books</h3>
-              <p className="borrowed-meta">
-                Log in to see the books currently on your account.
-              </p>
-            </>
-          )}
+      <main className="account-main">
+        <div className="account-card">
+          <div className="account-panel">
+            <h2>Welcome back</h2>
+            <p>
+              Access your library account to view your borrowed books and due
+              dates.
+            </p>
+            {!isLoggedIn && (
+              <form className="account-form" onSubmit={handleSubmit}>
+                <div>
+                  <label htmlFor="email">Email</label>
+                  <input
+                    id="email"
+                    type="email"
+                    placeholder="you@email.com"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="password">Password</label>
+                  <input
+                    id="password"
+                    type="password"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                  />
+                </div>
+                {error && <div className="error">{error}</div>}
+                <button type="submit">Log in</button>
+              </form>
+            )}
+          </div>
+
+          <div className="borrowed-section">
+            {isLoggedIn ? (
+              <>
+                <h3>{currentUser ? `${currentUser}'s library` : 'Your library'}</h3>
+                <h4>Borrowed books</h4>
+                {borrowedBooks.length === 0 ? (
+                  <p className="borrowed-meta">{EMPTY_LIST_MESSAGE}</p>
+                ) : (
+                  <div className="borrowed-grid">
+                    {borrowedBooks.map((book) => (
+                      <article className="borrowed-card" key={book.id}>
+                        <div className="borrowed-title">{book.title}</div>
+                        <div className="borrowed-meta">{book.author}</div>
+                        <div className="borrowed-meta">Due: {book.due}</div>
+                        <div className="borrowed-actions">
+                          <button
+                            type="button"
+                            className="small-btn"
+                            onClick={() => handleReturnBorrowed(book.id)}
+                          >
+                            Return
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                )}
+
+                <h4>Ebooks catalog</h4>
+                {visibleCatalogEbooks.length === 0 ? (
+                  <p className="borrowed-meta">{EMPTY_LIST_MESSAGE}</p>
+                ) : (
+                  <div className="borrowed-grid">
+                    {visibleCatalogEbooks.map((ebook) => {
+                      return (
+                        <article className="borrowed-card" key={ebook.id}>
+                          <div className="borrowed-title">{ebook.title}</div>
+                          <div className="borrowed-meta">{ebook.author}</div>
+                          <div className="borrowed-meta">Format: {ebook.format}</div>
+                          <div className="borrowed-actions">
+                            <button
+                              type="button"
+                              className="small-btn primary"
+                              onClick={() => handleBuyEbook(ebook)}
+                            >
+                              Buy ebook
+                            </button>
+                            <button
+                              type="button"
+                              className="small-btn"
+                              onClick={() => handleRemoveCatalogEbook(ebook.id)}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <h4>Purchased ebooks</h4>
+                {ownedEbooks.length === 0 ? (
+                  <p className="borrowed-meta">{EMPTY_LIST_MESSAGE}</p>
+                ) : (
+                  <div className="borrowed-grid">
+                    {ownedEbooks.map((ebook) => (
+                      <article className="borrowed-card" key={`owned-${ebook.id}`}>
+                        <div className="borrowed-title">{ebook.title}</div>
+                        <div className="borrowed-meta">{ebook.author}</div>
+                        <div className="borrowed-meta">Format: {ebook.format}</div>
+                        <div className="borrowed-actions">
+                          <button
+                            type="button"
+                            className="small-btn"
+                            onClick={() => handleRemoveEbook(ebook.id)}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                )}
+                <button type="button" className="account-form button logout" onClick={handleLogout}>
+                  Log out
+                </button>
+              </>
+            ) : (
+              <>
+                <h3>Your borrowed books</h3>
+                <p className="borrowed-meta">
+                  Log in to see the books currently on your account.
+                </p>
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      </main>
+
+      <Footer />
     </div>
   );
 };
 
 export default Usser;
+
+
+
+
+
