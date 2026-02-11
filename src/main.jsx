@@ -5,15 +5,18 @@ import App from './App';
 import Usser from './usser';
 import AboutUs from './aboutUs';
 import Catalog from './catalog';
+import { AppStateProvider } from './context/AppStateContext';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <BrowserRouter>
-    <Routes>
-      <Route path="/" element={<App />} />
-      <Route path="/catalog" element={<Catalog />} />
-      <Route path="/login" element={<Usser />} />
-      <Route path="/aboutUs" element={<AboutUs />} />
-    </Routes>
-  </BrowserRouter>
+  <AppStateProvider>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<App />} />
+        <Route path="/catalog" element={<Catalog />} />
+        <Route path="/login" element={<Usser />} />
+        <Route path="/aboutUs" element={<AboutUs />} />
+      </Routes>
+    </BrowserRouter>
+  </AppStateProvider>
 );

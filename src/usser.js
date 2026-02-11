@@ -1,106 +1,32 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Footer from './Footer';
+import { useAppState } from './context/AppStateContext';
 
-const AUTH_STORAGE_KEY = 'libraryIsLoggedIn';
-const USER_STORAGE_KEY = 'libraryCurrentUser';
-const BORROWED_STORAGE_KEY = 'libraryBorrowedBooks';
-const PURCHASED_STORAGE_KEY = 'libraryPurchasedBooks';
-const CATALOG_STORAGE_KEY = 'libraryEbookCatalog';
 const EMPTY_LIST_MESSAGE = 'No books in this list.';
-
-const borrowedSeed = [
-  {
-    id: 'bk-1',
-    title: 'The Picture of Dorian Gray',
-    author: 'Oscar Wilde',
-    due: '2026-02-12',
-  },
-  {
-    id: 'bk-2',
-    title: 'Frankenstein',
-    author: 'Mary Shelley',
-    due: '2026-02-20',
-  },
-  {
-    id: 'bk-3',
-    title: 'The Time Machine',
-    author: 'H. G. Wells',
-    due: '2026-02-28',
-  },
-];
-
-const ebookCatalog = [
-  {
-    id: 'eb-1',
-    title: 'Pride and Prejudice',
-    author: 'Jane Austen',
-    format: 'EPUB',
-  },
-  {
-    id: 'eb-2',
-    title: 'Moby-Dick',
-    author: 'Herman Melville',
-    format: 'PDF',
-  },
-  {
-    id: 'eb-3',
-    title: 'Dracula',
-    author: 'Bram Stoker',
-    format: 'EPUB',
-  },
-];
 
 const demoUsers = [
   { name: 'Emma Parker', email: 'emma@demo.com', password: 'Emma123!' },
   { name: 'James Carter', email: 'james@demo.com', password: 'Carter#45' },
 ];
 
-const readStoredList = (key, fallback = []) => {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : fallback;
-  } catch {
-    return fallback;
-  }
-};
-
-const readStoredBoolean = (key, fallback = false) => {
-  try {
-    const raw = localStorage.getItem(key);
-    if (raw === null) return fallback;
-    return raw === 'true';
-  } catch {
-    return fallback;
-  }
-};
-
-const readStoredString = (key, fallback = '') => {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw || fallback;
-  } catch {
-    return fallback;
-  }
-};
-
 const Usser = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(() => readStoredBoolean(AUTH_STORAGE_KEY, false));
-  const [currentUser, setCurrentUser] = useState(() => readStoredString(USER_STORAGE_KEY, ''));
-  const [borrowedBooks, setBorrowedBooks] = useState(() =>
-    readStoredList(BORROWED_STORAGE_KEY, borrowedSeed)
-  );
-  const [catalogEbooks, setCatalogEbooks] = useState(() =>
-    readStoredList(CATALOG_STORAGE_KEY, ebookCatalog)
-  );
-  const [ownedEbooks, setOwnedEbooks] = useState(() =>
-    readStoredList(PURCHASED_STORAGE_KEY, [])
-  );
+  const {
+    isLoggedIn,
+    currentUser,
+    borrowedBooks,
+    purchasedBooks: ownedEbooks,
+    catalogEbooks,
+    login,
+    logout,
+    returnBorrowedBook,
+    addPurchasedBook,
+    removePurchasedBook,
+    removeCatalogEbook,
+  } = useAppState();
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -120,55 +46,32 @@ const Usser = () => {
       return;
     }
 
-    setCurrentUser(match.name);
-    setIsLoggedIn(true);
-    localStorage.setItem(AUTH_STORAGE_KEY, 'true');
-    localStorage.setItem(USER_STORAGE_KEY, match.name);
+    login(match.name);
   };
 
   const handleLogout = () => {
-    setIsLoggedIn(false);
+    logout();
     setEmail('');
     setPassword('');
-    setCurrentUser('');
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-    localStorage.removeItem(USER_STORAGE_KEY);
   };
 
   const handleReturnBorrowed = (bookId) => {
-    setBorrowedBooks((previous) => {
-      const next = previous.filter((book) => book.id !== bookId);
-      localStorage.setItem(BORROWED_STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
+    returnBorrowedBook(bookId);
   };
 
   const handleBuyEbook = (ebook) => {
-    setOwnedEbooks((previous) => {
-      if (previous.some((item) => item.id === ebook.id)) return previous;
-      const next = [...previous, ebook];
-      localStorage.setItem(PURCHASED_STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
+    addPurchasedBook(ebook);
   };
 
   const handleRemoveCatalogEbook = (ebookId) => {
-    setCatalogEbooks((previous) => {
-      const next = previous.filter((ebook) => ebook.id !== ebookId);
-      localStorage.setItem(CATALOG_STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
+    removeCatalogEbook(ebookId);
   };
 
   const visibleCatalogEbooks = catalogEbooks.filter(
     (ebook) => !ownedEbooks.some((item) => item.id === ebook.id)
   );
   const handleRemoveEbook = (ebookId) => {
-    setOwnedEbooks((previous) => {
-      const next = previous.filter((ebook) => ebook.id !== ebookId);
-      localStorage.setItem(PURCHASED_STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
+    removePurchasedBook(ebookId);
   };
 
   return (

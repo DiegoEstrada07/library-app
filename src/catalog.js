@@ -1,26 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Footer from './Footer';
+import { useAppState } from './context/AppStateContext';
 
 const SUBJECT_URL = 'https://openlibrary.org/subjects/public_domain.json?limit=40';
 
 const coverUrl = (coverId) =>
   coverId ? `https://covers.openlibrary.org/b/id/${coverId}-L.jpg` : '';
-
-const BORROWED_STORAGE_KEY = 'libraryBorrowedBooks';
-const PURCHASED_STORAGE_KEY = 'libraryPurchasedBooks';
-const AUTH_STORAGE_KEY = 'libraryIsLoggedIn';
-
-const readStoredList = (key) => {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-};
 
 const Catalog = () => {
   const [books, setBooks] = useState([]);
@@ -28,10 +14,14 @@ const Catalog = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('relevant');
   const [activeBook, setActiveBook] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem(AUTH_STORAGE_KEY) === 'true');
   const [authNotice, setAuthNotice] = useState('');
-  const [borrowedBooks, setBorrowedBooks] = useState(() => readStoredList(BORROWED_STORAGE_KEY));
-  const [purchasedBooks, setPurchasedBooks] = useState(() => readStoredList(PURCHASED_STORAGE_KEY));
+  const {
+    isLoggedIn,
+    borrowedBooks,
+    purchasedBooks,
+    addBorrowedBook,
+    addPurchasedBook,
+  } = useAppState();
   const [filters, setFilters] = useState({
     withCover: false,
     withAuthor: false,
@@ -64,16 +54,6 @@ const Catalog = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
-
-  useEffect(() => {
-    const syncAuth = () => {
-      setIsLoggedIn(localStorage.getItem(AUTH_STORAGE_KEY) === 'true');
-    };
-
-    syncAuth();
-    window.addEventListener('storage', syncAuth);
-    return () => window.removeEventListener('storage', syncAuth);
   }, []);
 
   const chips = useMemo(() => {
@@ -162,12 +142,7 @@ const Catalog = () => {
     }
     if (!activeBook) return;
     const mapped = toListBook(activeBook);
-    setBorrowedBooks((prev) => {
-      if (prev.some((book) => book.id === mapped.id)) return prev;
-      const next = [...prev, mapped];
-      localStorage.setItem(BORROWED_STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
+    addBorrowedBook(mapped);
   };
 
   const handleAddPurchased = () => {
@@ -177,12 +152,7 @@ const Catalog = () => {
     }
     if (!activeBook) return;
     const mapped = toListBook(activeBook);
-    setPurchasedBooks((prev) => {
-      if (prev.some((book) => book.id === mapped.id)) return prev;
-      const next = [...prev, mapped];
-      localStorage.setItem(PURCHASED_STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
+    addPurchasedBook(mapped);
   };
 
   return (
@@ -940,7 +910,6 @@ const Catalog = () => {
                       onClick={() => {
                         setActiveBook(book);
                         setAuthNotice('');
-                        setIsLoggedIn(localStorage.getItem(AUTH_STORAGE_KEY) === 'true');
                       }}
                       aria-label={`Show details for ${book.title}`}
                     >
