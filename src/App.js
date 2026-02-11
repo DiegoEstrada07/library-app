@@ -5,6 +5,7 @@ import Footer from './Footer';
 import { useAppState } from './context/AppStateContext';
 
 const SUBJECT_URL =
+  import.meta.env.VITE_OPENLIBRARY_TRENDING_SUBJECT_URL ||
   'https://openlibrary.org/subjects/public_domain.json?limit=8';
 const BORROWED_STORAGE_KEY = 'libraryBorrowedBooks';
 const PURCHASED_STORAGE_KEY = 'libraryPurchasedBooks';

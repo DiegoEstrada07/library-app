@@ -4,7 +4,9 @@ import axios from 'axios';
 import Footer from './Footer';
 import { useAppState } from './context/AppStateContext';
 
-const SUBJECT_URL = 'https://openlibrary.org/subjects/public_domain.json?limit=40';
+const SUBJECT_URL =
+  import.meta.env.VITE_OPENLIBRARY_CATALOG_SUBJECT_URL ||
+  'https://openlibrary.org/subjects/public_domain.json?limit=40';
 
 const coverUrl = (coverId) =>
   coverId ? `https://covers.openlibrary.org/b/id/${coverId}-L.jpg` : '';
