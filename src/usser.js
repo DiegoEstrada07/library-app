@@ -27,6 +27,7 @@ const Usser = () => {
     addPurchasedBook,
     removePurchasedBook,
     removeCatalogEbook,
+    showToast,
   } = useAppState();
 
   const handleSubmit = (event) => {
@@ -44,32 +45,39 @@ const Usser = () => {
 
     if (!match) {
       setError('Invalid credentials. Try a demo user.');
+      showToast('Invalid credentials. Try a demo user.', 'error');
       return;
     }
 
     login(match.name);
+    showToast(`Welcome, ${match.name}.`, 'success');
   };
 
   const handleLogout = () => {
     logout();
     setEmail('');
     setPassword('');
+    showToast('Session closed.', 'info');
   };
 
   const handleReturnBorrowed = (bookId) => {
     returnBorrowedBook(bookId);
+    showToast('Book returned successfully.', 'success');
   };
 
   const handleRenewBorrowed = (bookId) => {
     updateBorrowedDueDate(bookId, 7);
+    showToast('Due date updated (+7 days).', 'success');
   };
 
   const handleBuyEbook = (ebook) => {
     addPurchasedBook(ebook);
+    showToast('Ebook added to purchased list.', 'success');
   };
 
   const handleRemoveCatalogEbook = (ebookId) => {
     removeCatalogEbook(ebookId);
+    showToast('Ebook removed from catalog list.', 'info');
   };
 
   const visibleCatalogEbooks = catalogEbooks.filter(
@@ -77,6 +85,7 @@ const Usser = () => {
   );
   const handleRemoveEbook = (ebookId) => {
     removePurchasedBook(ebookId);
+    showToast('Ebook removed from purchased list.', 'info');
   };
 
   return (

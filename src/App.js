@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import Footer from './Footer';
+import { useAppState } from './context/AppStateContext';
 
 const SUBJECT_URL =
   'https://openlibrary.org/subjects/public_domain.json?limit=8';
@@ -24,6 +25,7 @@ const readStoredList = (key) => {
 };
 
 const App = () => {
+  const { showToast } = useAppState();
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [borrowedCount, setBorrowedCount] = useState(
@@ -51,6 +53,7 @@ const App = () => {
         if (!isMounted) return;
         setBooks([]);
         setLoading(false);
+        showToast('Trending books could not be loaded.', 'error');
       });
 
     return () => {

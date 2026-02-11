@@ -22,6 +22,7 @@ const Catalog = () => {
     purchasedBooks,
     addBorrowedBook,
     addPurchasedBook,
+    showToast,
   } = useAppState();
   const [filters, setFilters] = useState({
     withCover: false,
@@ -50,6 +51,7 @@ const Catalog = () => {
         if (!isMounted) return;
         setBooks([]);
         setLoading(false);
+        showToast('Catalog could not be loaded. Try again later.', 'error');
       });
 
     return () => {
@@ -139,21 +141,35 @@ const Catalog = () => {
   const handleAddBorrowed = () => {
     if (!isLoggedIn) {
       setAuthNotice('You need to log in before adding books to borrowed.');
+      showToast('Log in required to add borrowed books.', 'error');
       return;
     }
     if (!activeBook) return;
     const mapped = toListBook(activeBook);
+    const alreadyBorrowed = borrowedBooks.some((book) => book.id === mapped.id);
     addBorrowedBook(mapped);
+    if (alreadyBorrowed) {
+      showToast('This book is already in borrowed.', 'info');
+    } else {
+      showToast('Book added to borrowed.', 'success');
+    }
   };
 
   const handleAddPurchased = () => {
     if (!isLoggedIn) {
       setAuthNotice('You need to log in before adding books to purchased.');
+      showToast('Log in required to add purchased books.', 'error');
       return;
     }
     if (!activeBook) return;
     const mapped = toListBook(activeBook);
+    const alreadyPurchased = purchasedBooks.some((book) => book.id === mapped.id);
     addPurchasedBook(mapped);
+    if (alreadyPurchased) {
+      showToast('This book is already in purchased.', 'info');
+    } else {
+      showToast('Book added to purchased.', 'success');
+    }
   };
 
   return (

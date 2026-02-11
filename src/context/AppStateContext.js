@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 const AUTH_STORAGE_KEY = 'libraryIsLoggedIn';
 const USER_STORAGE_KEY = 'libraryCurrentUser';
@@ -96,6 +103,8 @@ export const AppStateProvider = ({ children }) => {
   const [catalogEbooks, setCatalogEbooks] = useState(() =>
     readStoredList(CATALOG_STORAGE_KEY, ebookCatalogSeed)
   );
+  const [toast, setToast] = useState(null);
+  const toastTimeoutRef = useRef(null);
 
   const login = (userName) => {
     setCurrentUser(userName);
@@ -169,6 +178,30 @@ export const AppStateProvider = ({ children }) => {
     });
   };
 
+  const showToast = (message, type = 'info', duration = 2600) => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+      toastTimeoutRef.current = null;
+    }
+
+    setToast({
+      id: Date.now(),
+      message,
+      type,
+    });
+
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast(null);
+      toastTimeoutRef.current = null;
+    }, duration);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    };
+  }, []);
+
   const value = useMemo(
     () => ({
       isLoggedIn,
@@ -184,12 +217,42 @@ export const AppStateProvider = ({ children }) => {
       addPurchasedBook,
       removePurchasedBook,
       removeCatalogEbook,
+      showToast,
     }),
     [isLoggedIn, currentUser, borrowedBooks, purchasedBooks, catalogEbooks]
   );
 
   return (
-    <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>
+    <AppStateContext.Provider value={value}>
+      {children}
+      {toast && (
+        <div
+          style={{
+            position: 'fixed',
+            right: '16px',
+            bottom: '16px',
+            zIndex: 1000,
+            maxWidth: '320px',
+            padding: '12px 14px',
+            borderRadius: '10px',
+            color: '#fff',
+            background:
+              toast.type === 'error'
+                ? '#b12e45'
+                : toast.type === 'success'
+                ? '#2f6cb4'
+                : '#12110e',
+            boxShadow: '0 10px 24px rgba(0,0,0,0.18)',
+            fontSize: '14px',
+            lineHeight: 1.35,
+          }}
+          role="status"
+          aria-live="polite"
+        >
+          {toast.message}
+        </div>
+      )}
+    </AppStateContext.Provider>
   );
 };
 
