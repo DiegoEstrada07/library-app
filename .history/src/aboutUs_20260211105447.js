@@ -250,11 +250,11 @@ const AboutUs = () => {
         <div className="team-members">
           <div className="member">
             <h4>Diego</h4>
-            <span>Product Owner & Developer</span>
+            <span>Product Owner and Developer</span>
           </div>
           <div className="member">
             <h4>Andrea</h4>
-            <span>Scrum Master & Developer</span>
+            <span>Scrum Master and Developer</span>
           </div>
         </div>
       </section>
