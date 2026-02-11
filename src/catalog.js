@@ -1,26 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 import Footer from './Footer';
+import { useAppState } from './context/AppStateContext';
 
-const SUBJECT_URL = 'https://openlibrary.org/subjects/public_domain.json?limit=40';
+const SUBJECT_URL =
+  import.meta.env.VITE_OPENLIBRARY_CATALOG_SUBJECT_URL ||
+  'https://openlibrary.org/subjects/public_domain.json?limit=40';
 
 const coverUrl = (coverId) =>
   coverId ? `https://covers.openlibrary.org/b/id/${coverId}-L.jpg` : '';
-
-const BORROWED_STORAGE_KEY = 'libraryBorrowedBooks';
-const PURCHASED_STORAGE_KEY = 'libraryPurchasedBooks';
-const AUTH_STORAGE_KEY = 'libraryIsLoggedIn';
-
-const readStoredList = (key) => {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-};
 
 const Catalog = () => {
   const [books, setBooks] = useState([]);
@@ -28,10 +17,15 @@ const Catalog = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('relevant');
   const [activeBook, setActiveBook] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem(AUTH_STORAGE_KEY) === 'true');
   const [authNotice, setAuthNotice] = useState('');
-  const [borrowedBooks, setBorrowedBooks] = useState(() => readStoredList(BORROWED_STORAGE_KEY));
-  const [purchasedBooks, setPurchasedBooks] = useState(() => readStoredList(PURCHASED_STORAGE_KEY));
+  const {
+    isLoggedIn,
+    borrowedBooks,
+    purchasedBooks,
+    addBorrowedBook,
+    addPurchasedBook,
+    showToast,
+  } = useAppState();
   const [filters, setFilters] = useState({
     withCover: false,
     withAuthor: false,
@@ -41,15 +35,17 @@ const Catalog = () => {
     shortTitle: false,
   });
   const [activeChip, setActiveChip] = useState('all');
+  const borrowedCount = borrowedBooks.length;
+  const purchasedCount = purchasedBooks.length;
 
   useEffect(() => {
     let isMounted = true;
 
-    fetch(SUBJECT_URL)
-      .then((res) => res.json())
+    axios
+      .get(SUBJECT_URL)
       .then((data) => {
         if (!isMounted) return;
-        const works = Array.isArray(data.works) ? data.works : [];
+        const works = Array.isArray(data?.data?.works) ? data.data.works : [];
         setBooks(works.slice(0, 40));
         setLoading(false);
       })
@@ -57,21 +53,12 @@ const Catalog = () => {
         if (!isMounted) return;
         setBooks([]);
         setLoading(false);
+        showToast('Catalog could not be loaded. Try again later.', 'error');
       });
 
     return () => {
       isMounted = false;
     };
-  }, []);
-
-  useEffect(() => {
-    const syncAuth = () => {
-      setIsLoggedIn(localStorage.getItem(AUTH_STORAGE_KEY) === 'true');
-    };
-
-    syncAuth();
-    window.addEventListener('storage', syncAuth);
-    return () => window.removeEventListener('storage', syncAuth);
   }, []);
 
   const chips = useMemo(() => {
@@ -156,31 +143,35 @@ const Catalog = () => {
   const handleAddBorrowed = () => {
     if (!isLoggedIn) {
       setAuthNotice('You need to log in before adding books to borrowed.');
+      showToast('Log in required to add borrowed books.', 'error');
       return;
     }
     if (!activeBook) return;
     const mapped = toListBook(activeBook);
-    setBorrowedBooks((prev) => {
-      if (prev.some((book) => book.id === mapped.id)) return prev;
-      const next = [...prev, mapped];
-      localStorage.setItem(BORROWED_STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
+    const alreadyBorrowed = borrowedBooks.some((book) => book.id === mapped.id);
+    addBorrowedBook(mapped);
+    if (alreadyBorrowed) {
+      showToast('This book is already in borrowed.', 'info');
+    } else {
+      showToast('Book added to borrowed.', 'success');
+    }
   };
 
   const handleAddPurchased = () => {
     if (!isLoggedIn) {
       setAuthNotice('You need to log in before adding books to purchased.');
+      showToast('Log in required to add purchased books.', 'error');
       return;
     }
     if (!activeBook) return;
     const mapped = toListBook(activeBook);
-    setPurchasedBooks((prev) => {
-      if (prev.some((book) => book.id === mapped.id)) return prev;
-      const next = [...prev, mapped];
-      localStorage.setItem(PURCHASED_STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
+    const alreadyPurchased = purchasedBooks.some((book) => book.id === mapped.id);
+    addPurchasedBook(mapped);
+    if (alreadyPurchased) {
+      showToast('This book is already in purchased.', 'info');
+    } else {
+      showToast('Book added to purchased.', 'success');
+    }
   };
 
   return (
@@ -265,10 +256,54 @@ const Catalog = () => {
           text-decoration: none;
         }
 
+        .cart-wrap {
+          position: relative;
+          display: inline-grid;
+        }
+
+        .nav-actions {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .account-link {
+          text-decoration: none;
+          color: var(--ink);
+          font-size: 14px;
+          font-weight: 700;
+        }
+
         .cart-btn svg {
           width: 20px;
           height: 20px;
           stroke: #fff;
+        }
+
+        .cart-badge {
+          position: absolute;
+          width: 20px;
+          height: 20px;
+          border-radius: 999px;
+          font-size: 10px;
+          font-weight: 700;
+          display: grid;
+          place-items: center;
+          border: 2px solid #fff;
+          color: #fff;
+          pointer-events: none;
+        }
+
+        .cart-badge.borrowed {
+          top: -6px;
+          right: -8px;
+          background: #b12e45;
+        }
+
+        .cart-badge.purchased {
+          bottom: -6px;
+          right: -8px;
+          background: #2f6cb4;
         }
 
         .search-row {
@@ -711,16 +746,36 @@ const Catalog = () => {
           <Link to="/catalog">Catalog</Link>
           <Link to="/aboutUs">About Us</Link>
         </nav>
-        <Link className="cart-btn" to="/login" aria-label="Log in">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path
-              d="M20 21a8 8 0 0 0-16 0"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
-            <circle cx="12" cy="8" r="4" strokeWidth="1.8" />
-          </svg>
-        </Link>
+        <div className="nav-actions">
+          <Link className="account-link" to="/login">
+            {isLoggedIn ? 'My Account' : 'Log in'}
+          </Link>
+          <div className="cart-wrap">
+          <Link
+            className="cart-btn"
+            to="/login"
+            aria-label={`Carrito: ${borrowedCount} prestados y ${purchasedCount} comprados`}
+            title={`Prestados: ${borrowedCount} | Comprados: ${purchasedCount}`}
+          >
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M3 4h2l1.7 9.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 1.9-1.4l1.6-5.1H7.1"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <circle cx="10" cy="19" r="1.4" fill="#fff" stroke="none" />
+              <circle cx="17" cy="19" r="1.4" fill="#fff" stroke="none" />
+            </svg>
+          </Link>
+          <span className="cart-badge borrowed" aria-hidden="true">
+            {borrowedCount}
+          </span>
+          <span className="cart-badge purchased" aria-hidden="true">
+            {purchasedCount}
+          </span>
+          </div>
+        </div>
       </header>
 
       <section className="search-row">
@@ -874,7 +929,6 @@ const Catalog = () => {
                       onClick={() => {
                         setActiveBook(book);
                         setAuthNotice('');
-                        setIsLoggedIn(localStorage.getItem(AUTH_STORAGE_KEY) === 'true');
                       }}
                       aria-label={`Show details for ${book.title}`}
                     >

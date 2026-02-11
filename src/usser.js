@@ -1,106 +1,34 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Footer from './Footer';
+import { useAppState } from './context/AppStateContext';
 
-const AUTH_STORAGE_KEY = 'libraryIsLoggedIn';
-const USER_STORAGE_KEY = 'libraryCurrentUser';
-const BORROWED_STORAGE_KEY = 'libraryBorrowedBooks';
-const PURCHASED_STORAGE_KEY = 'libraryPurchasedBooks';
-const CATALOG_STORAGE_KEY = 'libraryEbookCatalog';
 const EMPTY_LIST_MESSAGE = 'No books in this list.';
-
-const borrowedSeed = [
-  {
-    id: 'bk-1',
-    title: 'The Picture of Dorian Gray',
-    author: 'Oscar Wilde',
-    due: '2026-02-12',
-  },
-  {
-    id: 'bk-2',
-    title: 'Frankenstein',
-    author: 'Mary Shelley',
-    due: '2026-02-20',
-  },
-  {
-    id: 'bk-3',
-    title: 'The Time Machine',
-    author: 'H. G. Wells',
-    due: '2026-02-28',
-  },
-];
-
-const ebookCatalog = [
-  {
-    id: 'eb-1',
-    title: 'Pride and Prejudice',
-    author: 'Jane Austen',
-    format: 'EPUB',
-  },
-  {
-    id: 'eb-2',
-    title: 'Moby-Dick',
-    author: 'Herman Melville',
-    format: 'PDF',
-  },
-  {
-    id: 'eb-3',
-    title: 'Dracula',
-    author: 'Bram Stoker',
-    format: 'EPUB',
-  },
-];
 
 const demoUsers = [
   { name: 'Emma Parker', email: 'emma@demo.com', password: 'Emma123!' },
   { name: 'James Carter', email: 'james@demo.com', password: 'Carter#45' },
 ];
 
-const readStoredList = (key, fallback = []) => {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : fallback;
-  } catch {
-    return fallback;
-  }
-};
-
-const readStoredBoolean = (key, fallback = false) => {
-  try {
-    const raw = localStorage.getItem(key);
-    if (raw === null) return fallback;
-    return raw === 'true';
-  } catch {
-    return fallback;
-  }
-};
-
-const readStoredString = (key, fallback = '') => {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw || fallback;
-  } catch {
-    return fallback;
-  }
-};
-
 const Usser = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(() => readStoredBoolean(AUTH_STORAGE_KEY, false));
-  const [currentUser, setCurrentUser] = useState(() => readStoredString(USER_STORAGE_KEY, ''));
-  const [borrowedBooks, setBorrowedBooks] = useState(() =>
-    readStoredList(BORROWED_STORAGE_KEY, borrowedSeed)
-  );
-  const [catalogEbooks, setCatalogEbooks] = useState(() =>
-    readStoredList(CATALOG_STORAGE_KEY, ebookCatalog)
-  );
-  const [ownedEbooks, setOwnedEbooks] = useState(() =>
-    readStoredList(PURCHASED_STORAGE_KEY, [])
-  );
+  const {
+    isLoggedIn,
+    currentUser,
+    borrowedBooks,
+    purchasedBooks: ownedEbooks,
+    catalogEbooks,
+    login,
+    logout,
+    returnBorrowedBook,
+    updateBorrowedDueDate,
+    addPurchasedBook,
+    removePurchasedBook,
+    removeCatalogEbook,
+    showToast,
+  } = useAppState();
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -117,58 +45,47 @@ const Usser = () => {
 
     if (!match) {
       setError('Invalid credentials. Try a demo user.');
+      showToast('Invalid credentials. Try a demo user.', 'error');
       return;
     }
 
-    setCurrentUser(match.name);
-    setIsLoggedIn(true);
-    localStorage.setItem(AUTH_STORAGE_KEY, 'true');
-    localStorage.setItem(USER_STORAGE_KEY, match.name);
+    login(match.name);
+    showToast(`Welcome, ${match.name}.`, 'success');
   };
 
   const handleLogout = () => {
-    setIsLoggedIn(false);
+    logout();
     setEmail('');
     setPassword('');
-    setCurrentUser('');
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-    localStorage.removeItem(USER_STORAGE_KEY);
+    showToast('Session closed.', 'info');
   };
 
   const handleReturnBorrowed = (bookId) => {
-    setBorrowedBooks((previous) => {
-      const next = previous.filter((book) => book.id !== bookId);
-      localStorage.setItem(BORROWED_STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
+    returnBorrowedBook(bookId);
+    showToast('Book returned successfully.', 'success');
+  };
+
+  const handleRenewBorrowed = (bookId) => {
+    updateBorrowedDueDate(bookId, 7);
+    showToast('Due date updated (+7 days).', 'success');
   };
 
   const handleBuyEbook = (ebook) => {
-    setOwnedEbooks((previous) => {
-      if (previous.some((item) => item.id === ebook.id)) return previous;
-      const next = [...previous, ebook];
-      localStorage.setItem(PURCHASED_STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
+    addPurchasedBook(ebook);
+    showToast('Ebook added to purchased list.', 'success');
   };
 
   const handleRemoveCatalogEbook = (ebookId) => {
-    setCatalogEbooks((previous) => {
-      const next = previous.filter((ebook) => ebook.id !== ebookId);
-      localStorage.setItem(CATALOG_STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
+    removeCatalogEbook(ebookId);
+    showToast('Ebook removed from catalog list.', 'info');
   };
 
   const visibleCatalogEbooks = catalogEbooks.filter(
     (ebook) => !ownedEbooks.some((item) => item.id === ebook.id)
   );
   const handleRemoveEbook = (ebookId) => {
-    setOwnedEbooks((previous) => {
-      const next = previous.filter((ebook) => ebook.id !== ebookId);
-      localStorage.setItem(PURCHASED_STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
+    removePurchasedBook(ebookId);
+    showToast('Ebook removed from purchased list.', 'info');
   };
 
   return (
@@ -239,10 +156,54 @@ const Usser = () => {
           text-decoration: none;
         }
 
+        .cart-wrap {
+          position: relative;
+          display: inline-grid;
+        }
+
+        .nav-actions {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .account-link {
+          text-decoration: none;
+          color: #12110e;
+          font-size: 14px;
+          font-weight: 700;
+        }
+
         .cart-btn svg {
           width: 20px;
           height: 20px;
           stroke: #fff;
+        }
+
+        .cart-badge {
+          position: absolute;
+          width: 20px;
+          height: 20px;
+          border-radius: 999px;
+          font-size: 10px;
+          font-weight: 700;
+          display: grid;
+          place-items: center;
+          border: 2px solid #fff;
+          color: #fff;
+          pointer-events: none;
+        }
+
+        .cart-badge.borrowed {
+          top: -6px;
+          right: -8px;
+          background: #b12e45;
+        }
+
+        .cart-badge.purchased {
+          bottom: -6px;
+          right: -8px;
+          background: #2f6cb4;
         }
 
         .account-main {
@@ -416,16 +377,36 @@ const Usser = () => {
           <Link to="/catalog">Catalog</Link>
           <Link to="/aboutUs">About Us</Link>
         </nav>
-        <Link className="cart-btn" to="/login" aria-label="Log in">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path
-              d="M20 21a8 8 0 0 0-16 0"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
-            <circle cx="12" cy="8" r="4" strokeWidth="1.8" />
-          </svg>
-        </Link>
+        <div className="nav-actions">
+          <Link className="account-link" to="/login">
+            {isLoggedIn ? 'My Account' : 'Log in'}
+          </Link>
+          <div className="cart-wrap">
+          <Link
+            className="cart-btn"
+            to="/login"
+            aria-label={`Carrito: ${borrowedBooks.length} prestados y ${ownedEbooks.length} comprados`}
+            title={`Prestados: ${borrowedBooks.length} | Comprados: ${ownedEbooks.length}`}
+          >
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M3 4h2l1.7 9.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 1.9-1.4l1.6-5.1H7.1"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <circle cx="10" cy="19" r="1.4" fill="#fff" stroke="none" />
+              <circle cx="17" cy="19" r="1.4" fill="#fff" stroke="none" />
+            </svg>
+          </Link>
+          <span className="cart-badge borrowed" aria-hidden="true">
+            {borrowedBooks.length}
+          </span>
+          <span className="cart-badge purchased" aria-hidden="true">
+            {ownedEbooks.length}
+          </span>
+          </div>
+        </div>
       </header>
 
       <main className="account-main">
@@ -479,6 +460,13 @@ const Usser = () => {
                         <div className="borrowed-meta">{book.author}</div>
                         <div className="borrowed-meta">Due: {book.due}</div>
                         <div className="borrowed-actions">
+                          <button
+                            type="button"
+                            className="small-btn primary"
+                            onClick={() => handleRenewBorrowed(book.id)}
+                          >
+                            Renew +7 days
+                          </button>
                           <button
                             type="button"
                             className="small-btn"
