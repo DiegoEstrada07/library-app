@@ -1,70 +1,82 @@
-# Getting Started with Create React App
+# Library App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Overview
+Library App is a Single Page Application (SPA) built with React + Vite for a startup pitch challenge.  
+The app allows users to:
+- Browse a public-domain catalog from OpenLibrary
+- Log in with mock authentication
+- Borrow books
+- Buy ebooks
+- Manage borrowed and purchased lists
 
-## Available Scripts
+The project includes routing, global state management with React Context, CRUD operations, API consumption with Axios, responsive UI, and error handling with fallback states and toasts.
 
-In the project directory, you can run:
+## Instructions
+### Requirements
+- Node.js 18+ (recommended)
+- npm
 
-### `npm start`
+### Setup
+1. Install dependencies:
+```bash
+npm install
+```
+2. Create environment file:
+```bash
+cp .env.example .env
+```
+3. Run development server:
+```bash
+npm run dev
+```
+4. Open:
+`http://localhost:5173`
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### Build for production
+```bash
+npm run build
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### Preview production build
+```bash
+npm run preview
+```
 
-### `npm test`
+## Logic Flow (Technical)
+1. App bootstraps in `src/main.jsx` with `BrowserRouter` and `AppStateProvider`.
+2. Global state (`src/context/AppStateContext.js`) initializes from `localStorage`:
+   - `isLoggedIn`
+   - `currentUser`
+   - `borrowedBooks`
+   - `purchasedBooks`
+   - `catalogEbooks`
+3. Routes:
+   - `/` Home
+   - `/catalog` Catalog
+   - `/login` Account/Login
+   - `/aboutUs` About Us
+4. Data fetching:
+   - `src/App.js` and `src/catalog.js` call OpenLibrary via Axios using `VITE_` env variables.
+5. CRUD behavior:
+   - Create: borrow/buy items
+   - Read: render borrowed/purchased/catalog lists
+   - Update: renew due date (`+7 days`)
+   - Delete: return/remove items
+6. Error handling:
+   - Loading states and fallback UI for failed API calls
+   - Global toasts from context for errors and user actions
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Logic Flow (Non Technical)
+1. User enters the app and sees featured books.
+2. User explores the catalog and opens a book detail.
+3. If not logged in, user is prompted to log in.
+4. Once logged in, user can:
+   - Add books to borrowed
+   - Buy ebooks
+   - Renew borrowed due dates
+   - Return/remove books
+5. The app remembers data between sessions using browser storage.
 
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## Authors
+- Diego - Product Owner & Developer
+- Andrea - Scrum Master & Developer
