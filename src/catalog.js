@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 import Footer from './Footer';
 import { useAppState } from './context/AppStateContext';
 
@@ -37,11 +38,11 @@ const Catalog = () => {
   useEffect(() => {
     let isMounted = true;
 
-    fetch(SUBJECT_URL)
-      .then((res) => res.json())
+    axios
+      .get(SUBJECT_URL)
       .then((data) => {
         if (!isMounted) return;
-        const works = Array.isArray(data.works) ? data.works : [];
+        const works = Array.isArray(data?.data?.works) ? data.data.works : [];
         setBooks(works.slice(0, 40));
         setLoading(false);
       })
