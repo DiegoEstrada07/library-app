@@ -128,6 +128,22 @@ export const AppStateProvider = ({ children }) => {
     });
   };
 
+  const updateBorrowedDueDate = (bookId, daysToAdd = 7) => {
+    setBorrowedBooks((previous) => {
+      const next = previous.map((book) => {
+        if (book.id !== bookId) return book;
+        const baseDate = new Date(book.due);
+        if (Number.isNaN(baseDate.getTime())) return book;
+        const updatedDate = new Date(baseDate);
+        updatedDate.setDate(updatedDate.getDate() + daysToAdd);
+        const due = updatedDate.toISOString().slice(0, 10);
+        return { ...book, due };
+      });
+      localStorage.setItem(BORROWED_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
   const addPurchasedBook = (book) => {
     setPurchasedBooks((previous) => {
       if (previous.some((item) => item.id === book.id)) return previous;
@@ -164,6 +180,7 @@ export const AppStateProvider = ({ children }) => {
       logout,
       addBorrowedBook,
       returnBorrowedBook,
+      updateBorrowedDueDate,
       addPurchasedBook,
       removePurchasedBook,
       removeCatalogEbook,

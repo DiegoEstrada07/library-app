@@ -23,6 +23,7 @@ const Usser = () => {
     login,
     logout,
     returnBorrowedBook,
+    updateBorrowedDueDate,
     addPurchasedBook,
     removePurchasedBook,
     removeCatalogEbook,
@@ -57,6 +58,10 @@ const Usser = () => {
 
   const handleReturnBorrowed = (bookId) => {
     returnBorrowedBook(bookId);
+  };
+
+  const handleRenewBorrowed = (bookId) => {
+    updateBorrowedDueDate(bookId, 7);
   };
 
   const handleBuyEbook = (ebook) => {
@@ -446,6 +451,13 @@ const Usser = () => {
                         <div className="borrowed-meta">{book.author}</div>
                         <div className="borrowed-meta">Due: {book.due}</div>
                         <div className="borrowed-actions">
+                          <button
+                            type="button"
+                            className="small-btn primary"
+                            onClick={() => handleRenewBorrowed(book.id)}
+                          >
+                            Renew +7 days
+                          </button>
                           <button
                             type="button"
                             className="small-btn"
