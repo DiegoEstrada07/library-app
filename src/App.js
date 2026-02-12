@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Footer from './Footer';
 import { useAppState } from './context/AppStateContext';
@@ -27,6 +27,8 @@ const readStoredList = (key) => {
 
 const App = () => {
   const { showToast } = useAppState();
+  const navigate = useNavigate();
+  const bookGridRef = useRef(null);
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [borrowedCount, setBorrowedCount] = useState(
@@ -38,6 +40,7 @@ const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(
     () => localStorage.getItem(AUTH_STORAGE_KEY) === 'true'
   );
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -61,6 +64,21 @@ const App = () => {
       isMounted = false;
     };
   }, []);
+
+  const scrollTrending = (direction) => {
+    const container = bookGridRef.current;
+    if (!container) return;
+
+    const firstCard = container.querySelector('.book-card');
+    const gapValue = window.getComputedStyle(container).gap || '0';
+    const gap = Number.parseFloat(gapValue) || 0;
+    const step = firstCard ? firstCard.getBoundingClientRect().width + gap : 240;
+
+    container.scrollBy({
+      left: direction === 'next' ? step : -step,
+      behavior: 'smooth',
+    });
+  };
 
   useEffect(() => {
     const syncCartCounts = () => {
@@ -148,6 +166,29 @@ const App = () => {
           text-decoration: none;
           color: inherit;
           font-weight: 600;
+        }
+
+        .nav-menu-btn {
+          display: none;
+          width: 42px;
+          height: 42px;
+          border: 1px solid #d8d3cb;
+          border-radius: 10px;
+          background: #fff;
+          padding: 0;
+          cursor: pointer;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          flex-direction: column;
+        }
+
+        .nav-menu-btn span {
+          display: block;
+          width: 18px;
+          height: 2px;
+          background: var(--ink);
+          border-radius: 999px;
         }
 
         .cart-btn {
@@ -257,47 +298,27 @@ const App = () => {
         }
 
         .btn-icon {
-          width: 44px;
+          min-width: 44px;
           height: 44px;
+          padding: 0 14px;
           border-radius: 10px;
           border: none;
           background: var(--ink);
           color: #fff;
-          font-size: 18px;
+          font-size: 13px;
+          font-weight: 700;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          line-height: 1;
           cursor: pointer;
         }
 
         .community {
           display: flex;
           align-items: center;
-          gap: 16px;
           color: var(--muted);
           font-size: 13px;
-        }
-
-        .avatars {
-          display: flex;
-        }
-
-        .avatar {
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          border: 2px solid #fff;
-          background: linear-gradient(130deg, #f6c28b, #b96c5b);
-          margin-left: -8px;
-        }
-
-        .avatar:nth-child(2) {
-          background: linear-gradient(130deg, #b7d0ff, #6d9ad9);
-        }
-
-        .avatar:nth-child(3) {
-          background: linear-gradient(130deg, #ffd8a6, #f3a44a);
-        }
-
-        .avatar:nth-child(4) {
-          background: linear-gradient(130deg, #d8b5ff, #9466c7);
         }
 
         .hero-right {
@@ -446,6 +467,18 @@ const App = () => {
           scroll-snap-align: start;
         }
 
+        .book-rank {
+          align-self: start;
+          justify-self: start;
+          background: #12110e;
+          color: #fff;
+          font-size: 11px;
+          font-weight: 700;
+          padding: 5px 10px;
+          border-radius: 999px;
+          letter-spacing: 0.2px;
+        }
+
         .book-cover {
           width: 100%;
           height: 140px;
@@ -565,16 +598,70 @@ const App = () => {
         }
 
         @media (max-width: 640px) {
+          .nav {
+            flex-wrap: wrap;
+            justify-content: flex-start;
+          }
+
+          .nav-menu-btn {
+            display: inline-flex;
+            margin-left: 10px;
+          }
+
           .nav-links {
             display: none;
+            width: 100%;
+            order: 4;
+            margin-top: 12px;
+            padding: 12px;
+            border: 1px solid #e6e0d7;
+            border-radius: 12px;
+            background: #fff;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+          }
+
+          .nav-links.open {
+            display: flex;
+          }
+
+          .nav-actions {
+            margin-left: auto;
           }
 
           .carousel {
-            grid-template-columns: 1fr;
+            grid-template-columns: auto 1fr auto;
+            gap: 8px;
           }
 
           .nav-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            font-size: 16px;
+            display: grid;
+            place-items: center;
+          }
+
+          .book-grid {
+            gap: 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            touch-action: pan-x;
+          }
+
+          .book-grid::-webkit-scrollbar {
             display: none;
+          }
+
+          .book-card {
+            min-width: 100%;
+            width: 100%;
+            scroll-snap-align: start;
           }
 
           .footer {
@@ -592,10 +679,22 @@ const App = () => {
         <div className="logo">
           BOOKCLUB<span>.</span>
         </div>
-        <nav className="nav-links">
-          <Link to="/">Home</Link>
-          <Link to="/catalog">Catalog</Link>
-          <Link to="/aboutUs">About Us</Link>
+        <button
+          className="nav-menu-btn"
+          type="button"
+          aria-controls="primary-nav-home"
+          aria-expanded={isMenuOpen}
+          aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+          onClick={() => setIsMenuOpen((prev) => !prev)}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+        <nav id="primary-nav-home" className={`nav-links${isMenuOpen ? ' open' : ''}`}>
+          <Link to="/" onClick={() => setIsMenuOpen(false)}>Home</Link>
+          <Link to="/catalog" onClick={() => setIsMenuOpen(false)}>Catalog</Link>
+          <Link to="/aboutUs" onClick={() => setIsMenuOpen(false)}>About Us</Link>
         </nav>
         <div className="nav-actions">
           <Link className="account-link" to="/login">
@@ -638,18 +737,24 @@ const App = () => {
             inspired and curious.
           </p>
           <div className="hero-cta">
-            <button className="btn-primary">Explore now</button>
-            <button className="btn-icon" aria-label="Next">
-              →
+            <button
+              className="btn-primary"
+              type="button"
+              onClick={() => navigate('/catalog')}
+            >
+              Explore now
+            </button>
+            <button
+              className="btn-icon"
+              type="button"
+              aria-label="Log in"
+              title="Go to Log in"
+              onClick={() => navigate('/login')}
+            >
+              Log in <span aria-hidden="true">{'\u2192'}</span>
             </button>
           </div>
           <div className="community">
-            <div className="avatars">
-              <span className="avatar" />
-              <span className="avatar" />
-              <span className="avatar" />
-              <span className="avatar" />
-            </div>
             <div>
               <strong>40k+</strong> book lovers joined
             </div>
@@ -681,18 +786,19 @@ const App = () => {
       <section className="trending">
         <h2>Top Trending Books</h2>
         <div className="carousel">
-          <button className="nav-btn" aria-label="Previous">
-            ←
+          <button className="nav-btn" type="button" aria-label="Previous" onClick={() => scrollTrending('prev')}>
+            {'\u2190'}
           </button>
-          <div className="book-grid">
+          <div className="book-grid" ref={bookGridRef}>
             {loading && <div className="loading">Loading books...</div>}
             {!loading && books.length === 0 && (
               <div className="loading">
                 We could not load the catalog right now.
               </div>
             )}
-            {books.map((book) => (
+            {books.map((book, index) => (
               <article className="book-card" key={book.key}>
+                <div className="book-rank">#{index + 1}</div>
                 <div className="book-cover">
                   {book.cover_id ? (
                     <img
@@ -714,8 +820,8 @@ const App = () => {
               </article>
             ))}
           </div>
-          <button className="nav-btn" aria-label="Next">
-            →
+          <button className="nav-btn" type="button" aria-label="Next" onClick={() => scrollTrending('next')}>
+            {'\u2192'}
           </button>
         </div>
       </section>
@@ -726,5 +832,8 @@ const App = () => {
 };
 
 export default App;
+
+
+
 
 
