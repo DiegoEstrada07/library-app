@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Footer from './Footer';
 import { useAppState } from './context/AppStateContext';
@@ -27,6 +27,8 @@ const readStoredList = (key) => {
 
 const App = () => {
   const { showToast } = useAppState();
+  const navigate = useNavigate();
+  const bookGridRef = useRef(null);
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [borrowedCount, setBorrowedCount] = useState(
@@ -61,6 +63,15 @@ const App = () => {
       isMounted = false;
     };
   }, []);
+
+  const scrollTrending = (direction) => {
+    if (!bookGridRef.current) return;
+
+    bookGridRef.current.scrollBy({
+      left: direction === 'next' ? 240 : -240,
+      behavior: 'smooth',
+    });
+  };
 
   useEffect(() => {
     const syncCartCounts = () => {
@@ -257,47 +268,27 @@ const App = () => {
         }
 
         .btn-icon {
-          width: 44px;
+          min-width: 44px;
           height: 44px;
+          padding: 0 14px;
           border-radius: 10px;
           border: none;
           background: var(--ink);
           color: #fff;
-          font-size: 18px;
+          font-size: 13px;
+          font-weight: 700;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          line-height: 1;
           cursor: pointer;
         }
 
         .community {
           display: flex;
           align-items: center;
-          gap: 16px;
           color: var(--muted);
           font-size: 13px;
-        }
-
-        .avatars {
-          display: flex;
-        }
-
-        .avatar {
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          border: 2px solid #fff;
-          background: linear-gradient(130deg, #f6c28b, #b96c5b);
-          margin-left: -8px;
-        }
-
-        .avatar:nth-child(2) {
-          background: linear-gradient(130deg, #b7d0ff, #6d9ad9);
-        }
-
-        .avatar:nth-child(3) {
-          background: linear-gradient(130deg, #ffd8a6, #f3a44a);
-        }
-
-        .avatar:nth-child(4) {
-          background: linear-gradient(130deg, #d8b5ff, #9466c7);
         }
 
         .hero-right {
@@ -638,18 +629,24 @@ const App = () => {
             inspired and curious.
           </p>
           <div className="hero-cta">
-            <button className="btn-primary">Explore now</button>
-            <button className="btn-icon" aria-label="Next">
-              →
+            <button
+              className="btn-primary"
+              type="button"
+              onClick={() => navigate('/catalog')}
+            >
+              Explore now
+            </button>
+            <button
+              className="btn-icon"
+              type="button"
+              aria-label="Log in"
+              title="Go to Log in"
+              onClick={() => navigate('/login')}
+            >
+              Log in <span aria-hidden="true">{'\u2192'}</span>
             </button>
           </div>
           <div className="community">
-            <div className="avatars">
-              <span className="avatar" />
-              <span className="avatar" />
-              <span className="avatar" />
-              <span className="avatar" />
-            </div>
             <div>
               <strong>40k+</strong> book lovers joined
             </div>
@@ -681,10 +678,10 @@ const App = () => {
       <section className="trending">
         <h2>Top Trending Books</h2>
         <div className="carousel">
-          <button className="nav-btn" aria-label="Previous">
+          <button className="nav-btn" type="button" aria-label="Previous" onClick={() => scrollTrending('prev')}> 
             ←
           </button>
-          <div className="book-grid">
+          <div className="book-grid" ref={bookGridRef}>
             {loading && <div className="loading">Loading books...</div>}
             {!loading && books.length === 0 && (
               <div className="loading">
@@ -714,7 +711,7 @@ const App = () => {
               </article>
             ))}
           </div>
-          <button className="nav-btn" aria-label="Next">
+          <button className="nav-btn" type="button" aria-label="Next" onClick={() => scrollTrending('next')}> 
             →
           </button>
         </div>
@@ -726,5 +723,7 @@ const App = () => {
 };
 
 export default App;
+
+
 
 
