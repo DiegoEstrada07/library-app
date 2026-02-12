@@ -71,6 +71,11 @@ const Usser = () => {
   };
 
   const handleBuyEbook = (ebook) => {
+    const existsInCatalog = catalogEbooks.some((item) => item.id === ebook.id);
+    if (!existsInCatalog) {
+      showToast('This ebook must be in the buy list before purchase.', 'error');
+      return;
+    }
     addPurchasedBook(ebook);
     showToast('Ebook added to purchased list.', 'success');
   };
@@ -480,7 +485,7 @@ const Usser = () => {
                   </div>
                 )}
 
-                <h4>Ebooks catalog</h4>
+                <h4>Ebooks catalog to buy</h4>
                 {visibleCatalogEbooks.length === 0 ? (
                   <p className="borrowed-meta">{EMPTY_LIST_MESSAGE}</p>
                 ) : (

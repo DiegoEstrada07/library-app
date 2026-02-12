@@ -22,8 +22,9 @@ const Catalog = () => {
     isLoggedIn,
     borrowedBooks,
     purchasedBooks,
+    catalogEbooks,
     addBorrowedBook,
-    addPurchasedBook,
+    addCatalogEbook,
     showToast,
   } = useAppState();
   const [filters, setFilters] = useState({
@@ -157,20 +158,23 @@ const Catalog = () => {
     }
   };
 
-  const handleAddPurchased = () => {
+  const handleAddToBuyList = () => {
     if (!isLoggedIn) {
-      setAuthNotice('You need to log in before adding books to purchased.');
-      showToast('Log in required to add purchased books.', 'error');
+      setAuthNotice('You need to log in before adding books to the buy list.');
+      showToast('Log in required to add books to the buy list.', 'error');
       return;
     }
     if (!activeBook) return;
     const mapped = toListBook(activeBook);
+    const alreadyInBuyList = catalogEbooks.some((book) => book.id === mapped.id);
     const alreadyPurchased = purchasedBooks.some((book) => book.id === mapped.id);
-    addPurchasedBook(mapped);
     if (alreadyPurchased) {
       showToast('This book is already in purchased.', 'info');
+    } else if (alreadyInBuyList) {
+      showToast('This book is already in the buy list.', 'info');
     } else {
-      showToast('Book added to purchased.', 'success');
+      addCatalogEbook(mapped);
+      showToast('Book added to the buy list.', 'success');
     }
   };
 
@@ -1027,22 +1031,26 @@ const Catalog = () => {
               <button
                 type="button"
                 className="action-btn primary"
-                onClick={handleAddPurchased}
+                onClick={handleAddToBuyList}
                 disabled={
-                  !isLoggedIn || purchasedBooks.some((book) => book.id === activeBook.key)
+                  !isLoggedIn ||
+                  purchasedBooks.some((book) => book.id === activeBook.key) ||
+                  catalogEbooks.some((book) => book.id === activeBook.key)
                 }
               >
                 {!isLoggedIn
                   ? 'Log in required'
                   : purchasedBooks.some((book) => book.id === activeBook.key)
                   ? 'Already purchased'
-                  : 'Add to purchased'}
+                  : catalogEbooks.some((book) => book.id === activeBook.key)
+                  ? 'Already in buy list'
+                  : 'Add to buy list'}
               </button>
             </div>
             {!isLoggedIn && (
               <>
                 <div className="auth-notice">
-                  {authNotice || 'Log in to add this book to borrowed or purchased lists.'}
+                  {authNotice || 'Log in to add this book to borrowed or buy list.'}
                 </div>
                 <Link className="auth-login-link" to="/login">
                   Go to log in

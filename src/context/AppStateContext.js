@@ -154,6 +154,9 @@ export const AppStateProvider = ({ children }) => {
   };
 
   const addPurchasedBook = (book) => {
+    const existsInCatalog = catalogEbooks.some((item) => item.id === book.id);
+    if (!existsInCatalog) return;
+
     setPurchasedBooks((previous) => {
       if (previous.some((item) => item.id === book.id)) return previous;
       const next = [...previous, book];
@@ -173,6 +176,15 @@ export const AppStateProvider = ({ children }) => {
   const removeCatalogEbook = (ebookId) => {
     setCatalogEbooks((previous) => {
       const next = previous.filter((ebook) => ebook.id !== ebookId);
+      localStorage.setItem(CATALOG_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const addCatalogEbook = (ebook) => {
+    setCatalogEbooks((previous) => {
+      if (previous.some((item) => item.id === ebook.id)) return previous;
+      const next = [...previous, ebook];
       localStorage.setItem(CATALOG_STORAGE_KEY, JSON.stringify(next));
       return next;
     });
@@ -216,6 +228,7 @@ export const AppStateProvider = ({ children }) => {
       updateBorrowedDueDate,
       addPurchasedBook,
       removePurchasedBook,
+      addCatalogEbook,
       removeCatalogEbook,
       showToast,
     }),
