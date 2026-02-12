@@ -1,5 +1,9 @@
 .site-footer {
   margin-top: auto;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  width: 100vw;
+  box-sizing: border-box;
   padding: 36px 60px 14px;
   background: #000000;
   color: #d6d6d6;

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import Footer from './Footer';
@@ -18,6 +18,7 @@ const Catalog = () => {
   const [sortBy, setSortBy] = useState('relevant');
   const [activeBook, setActiveBook] = useState(null);
   const [authNotice, setAuthNotice] = useState('');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const {
     isLoggedIn,
     borrowedBooks,
@@ -36,6 +37,7 @@ const Catalog = () => {
     shortTitle: false,
   });
   const [activeChip, setActiveChip] = useState('all');
+  const chipRowRef = useRef(null);
   const borrowedCount = borrowedBooks.length;
   const purchasedCount = purchasedBooks.length;
 
@@ -130,6 +132,16 @@ const Catalog = () => {
     }));
   };
 
+  const scrollChips = (direction) => {
+    const container = chipRowRef.current;
+    if (!container) return;
+    const distance = 180;
+    container.scrollBy({
+      left: direction === 'left' ? -distance : distance,
+      behavior: 'smooth',
+    });
+  };
+
   const toListBook = (book) => ({
     id: book.key,
     title: book.title,
@@ -206,6 +218,8 @@ const Catalog = () => {
           min-height: 100vh;
           display: flex;
           flex-direction: column;
+          width: 100%;
+          max-width: 100%;
           color: var(--ink);
           font-family: 'Nunito Sans', 'Segoe UI', sans-serif;
           background:
@@ -213,6 +227,7 @@ const Catalog = () => {
             radial-gradient(circle at 85% 20%, rgba(122, 144, 126, 0.1), transparent 50%),
             linear-gradient(180deg, #faf8f5 0%, #f7f4ef 50%, #ffffff 100%);
           padding: 28px 60px 0;
+          overflow-x: hidden;
         }
 
         .nav {
@@ -244,6 +259,29 @@ const Catalog = () => {
           text-decoration: none;
           color: inherit;
           font-weight: 600;
+        }
+
+        .nav-menu-btn {
+          display: none;
+          width: 42px;
+          height: 42px;
+          border: 1px solid #d8d3cb;
+          border-radius: 10px;
+          background: #fff;
+          padding: 0;
+          cursor: pointer;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          flex-direction: column;
+        }
+
+        .nav-menu-btn span {
+          display: block;
+          width: 18px;
+          height: 2px;
+          background: var(--ink);
+          border-radius: 999px;
         }
 
         .cart-btn {
@@ -380,8 +418,33 @@ const Catalog = () => {
           display: flex;
           gap: 10px;
           overflow-x: auto;
+          width: 100%;
+          max-width: 100%;
           padding: 4px 2px 6px;
           margin-bottom: 16px;
+        }
+
+        .chip-scroll {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          width: 100%;
+        }
+
+        .chip-arrow {
+          display: none;
+          width: 34px;
+          height: 34px;
+          border-radius: 999px;
+          border: 1px solid #ddd5ca;
+          background: #fff;
+          color: var(--ink);
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          flex-shrink: 0;
+          font-size: 18px;
+          line-height: 1;
         }
 
         .chip {
@@ -407,11 +470,20 @@ const Catalog = () => {
           grid-template-columns: 280px 1fr;
           gap: 26px;
           align-items: start;
+          width: 100%;
+          min-width: 0;
+        }
+
+        .catalog-layout > * {
+          min-width: 0;
+          max-width: 100%;
         }
 
         .filters {
           display: grid;
           gap: 12px;
+          width: 100%;
+          min-width: 0;
         }
 
         .filter-card {
@@ -424,6 +496,11 @@ const Catalog = () => {
           justify-content: space-between;
           align-items: center;
           gap: 10px;
+          width: 100%;
+        }
+
+        .filter-card > div {
+          min-width: 0;
         }
 
         .filter-title {
@@ -483,8 +560,9 @@ const Catalog = () => {
 
         .results-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
           gap: 18px;
+          min-width: 0;
         }
 
         .book-card {
@@ -583,7 +661,7 @@ const Catalog = () => {
           padding: 12px;
         }
 
-        @media (max-width: 980px) {
+        @media (max-width: 1120px) {
           .catalog-page {
             padding: 24px 28px 0;
           }
@@ -593,13 +671,51 @@ const Catalog = () => {
           }
 
           .filters {
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: 1fr;
+          }
+
+          .results-grid {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          }
+        }
+
+        @media (max-width: 760px) {
+          .filters {
+            grid-template-columns: 1fr;
           }
         }
 
         @media (max-width: 640px) {
+          .nav {
+            flex-wrap: wrap;
+            justify-content: flex-start;
+          }
+
+          .nav-menu-btn {
+            display: inline-flex;
+            margin-left: 10px;
+          }
+
           .nav-links {
             display: none;
+            width: 100%;
+            order: 4;
+            margin-top: 12px;
+            padding: 12px;
+            border: 1px solid #e6e0d7;
+            border-radius: 12px;
+            background: #fff;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+          }
+
+          .nav-links.open {
+            display: flex;
+          }
+
+          .nav-actions {
+            margin-left: auto;
           }
 
           .catalog-toolbar {
@@ -609,6 +725,10 @@ const Catalog = () => {
 
           .search-row {
             grid-template-columns: 1fr;
+          }
+
+          .chip-arrow {
+            display: inline-flex;
           }
         }
 
@@ -745,10 +865,22 @@ const Catalog = () => {
         <div className="logo">
           BOOKCLUB<span>.</span>
         </div>
-        <nav className="nav-links">
-          <Link to="/">Home</Link>
-          <Link to="/catalog">Catalog</Link>
-          <Link to="/aboutUs">About Us</Link>
+        <button
+          className="nav-menu-btn"
+          type="button"
+          aria-controls="primary-nav-catalog"
+          aria-expanded={isMenuOpen}
+          aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+          onClick={() => setIsMenuOpen((prev) => !prev)}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+        <nav id="primary-nav-catalog" className={`nav-links${isMenuOpen ? ' open' : ''}`}>
+          <Link to="/" onClick={() => setIsMenuOpen(false)}>Home</Link>
+          <Link to="/catalog" onClick={() => setIsMenuOpen(false)}>Catalog</Link>
+          <Link to="/aboutUs" onClick={() => setIsMenuOpen(false)}>About Us</Link>
         </nav>
         <div className="nav-actions">
           <Link className="account-link" to="/login">
@@ -901,17 +1033,35 @@ const Catalog = () => {
         </aside>
 
         <div>
-          <div className="chip-row">
-            {chips.map((chip) => (
-              <button
-                key={chip}
-                type="button"
-                className={`chip ${activeChip === chip ? 'active' : ''}`}
-                onClick={() => setActiveChip(chip)}
-              >
-                {chip === 'all' ? 'All categories' : chip}
-              </button>
-            ))}
+          <div className="chip-scroll">
+            <button
+              type="button"
+              className="chip-arrow"
+              aria-label="Scroll categories to the left"
+              onClick={() => scrollChips('left')}
+            >
+              {'<'}
+            </button>
+            <div className="chip-row" ref={chipRowRef}>
+              {chips.map((chip) => (
+                <button
+                  key={chip}
+                  type="button"
+                  className={`chip ${activeChip === chip ? 'active' : ''}`}
+                  onClick={() => setActiveChip(chip)}
+                >
+                  {chip === 'all' ? 'All categories' : chip}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="chip-arrow"
+              aria-label="Scroll categories to the right"
+              onClick={() => scrollChips('right')}
+            >
+              {'>'}
+            </button>
           </div>
 
           <div className="results-grid">

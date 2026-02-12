@@ -27,6 +27,7 @@ const AboutUs = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(
     () => localStorage.getItem(AUTH_STORAGE_KEY) === 'true'
   );
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     const syncCartCounts = () => {
@@ -108,6 +109,29 @@ const AboutUs = () => {
           text-decoration: none;
           color: inherit;
           font-weight: 600;
+        }
+
+        .nav-menu-btn {
+          display: none;
+          width: 42px;
+          height: 42px;
+          border: 1px solid #d8d3cb;
+          border-radius: 10px;
+          background: #fff;
+          padding: 0;
+          cursor: pointer;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          flex-direction: column;
+        }
+
+        .nav-menu-btn span {
+          display: block;
+          width: 18px;
+          height: 2px;
+          background: var(--ink);
+          border-radius: 999px;
         }
 
         .cart-btn {
@@ -272,8 +296,36 @@ const AboutUs = () => {
         }
 
         @media (max-width: 640px) {
+          .nav {
+            flex-wrap: wrap;
+            justify-content: flex-start;
+          }
+
+          .nav-menu-btn {
+            display: inline-flex;
+            margin-left: 10px;
+          }
+
           .nav-links {
             display: none;
+            width: 100%;
+            order: 4;
+            margin-top: 12px;
+            padding: 12px;
+            border: 1px solid #e6e0d7;
+            border-radius: 12px;
+            background: #fff;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+          }
+
+          .nav-links.open {
+            display: flex;
+          }
+
+          .nav-actions {
+            margin-left: auto;
           }
         }
       `}</style>
@@ -282,10 +334,22 @@ const AboutUs = () => {
         <div className="logo">
           BOOKCLUB<span>.</span>
         </div>
-        <nav className="nav-links">
-          <Link to="/">Home</Link>
-          <Link to="/catalog">Catalog</Link>
-          <Link to="/aboutUs">About Us</Link>
+        <button
+          className="nav-menu-btn"
+          type="button"
+          aria-controls="primary-nav-about"
+          aria-expanded={isMenuOpen}
+          aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+          onClick={() => setIsMenuOpen((prev) => !prev)}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+        <nav id="primary-nav-about" className={`nav-links${isMenuOpen ? ' open' : ''}`}>
+          <Link to="/" onClick={() => setIsMenuOpen(false)}>Home</Link>
+          <Link to="/catalog" onClick={() => setIsMenuOpen(false)}>Catalog</Link>
+          <Link to="/aboutUs" onClick={() => setIsMenuOpen(false)}>About Us</Link>
         </nav>
         <div className="nav-actions">
           <Link className="account-link" to="/login">
@@ -371,5 +435,4 @@ const AboutUs = () => {
 };
 
 export default AboutUs;
-
 

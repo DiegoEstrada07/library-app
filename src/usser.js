@@ -14,6 +14,7 @@ const Usser = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const {
     isLoggedIn,
     currentUser,
@@ -145,6 +146,29 @@ const Usser = () => {
           text-decoration: none;
           color: inherit;
           font-weight: 600;
+        }
+
+        .nav-menu-btn {
+          display: none;
+          width: 42px;
+          height: 42px;
+          border: 1px solid #d8d3cb;
+          border-radius: 10px;
+          background: #fff;
+          padding: 0;
+          cursor: pointer;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          flex-direction: column;
+        }
+
+        .nav-menu-btn span {
+          display: block;
+          width: 18px;
+          height: 2px;
+          background: #12110e;
+          border-radius: 999px;
         }
 
         .cart-btn {
@@ -367,8 +391,36 @@ const Usser = () => {
             grid-template-columns: 1fr;
           }
 
+          .nav {
+            flex-wrap: wrap;
+            justify-content: flex-start;
+          }
+
+          .nav-menu-btn {
+            display: inline-flex;
+            margin-left: 10px;
+          }
+
           .nav-links {
             display: none;
+            width: 100%;
+            order: 4;
+            margin-top: 12px;
+            padding: 12px;
+            border: 1px solid #e6e0d7;
+            border-radius: 12px;
+            background: #fff;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+          }
+
+          .nav-links.open {
+            display: flex;
+          }
+
+          .nav-actions {
+            margin-left: auto;
           }
         }
       `}</style>
@@ -377,10 +429,22 @@ const Usser = () => {
         <div className="logo">
           BOOKCLUB<span>.</span>
         </div>
-        <nav className="nav-links">
-          <Link to="/">Home</Link>
-          <Link to="/catalog">Catalog</Link>
-          <Link to="/aboutUs">About Us</Link>
+        <button
+          className="nav-menu-btn"
+          type="button"
+          aria-controls="primary-nav-account"
+          aria-expanded={isMenuOpen}
+          aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+          onClick={() => setIsMenuOpen((prev) => !prev)}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+        <nav id="primary-nav-account" className={`nav-links${isMenuOpen ? ' open' : ''}`}>
+          <Link to="/" onClick={() => setIsMenuOpen(false)}>Home</Link>
+          <Link to="/catalog" onClick={() => setIsMenuOpen(false)}>Catalog</Link>
+          <Link to="/aboutUs" onClick={() => setIsMenuOpen(false)}>About Us</Link>
         </nav>
         <div className="nav-actions">
           <Link className="account-link" to="/login">
